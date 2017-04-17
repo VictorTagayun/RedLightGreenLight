@@ -4,12 +4,10 @@ import cozmo
 import asyncio
 import random
 import time
-from cozmo.util import distance_mm, speed_mmps
-from Common.woc import WOC
 
 '''
 @class RedLightGreenLight
-Play Red Light Green Light with Cozmo as curator.
+Play Red Light Green Light with two players and Cozmo as the judge.
 @author - Wizards of Coz
 '''
 
@@ -17,7 +15,7 @@ class RedLightGreenLight(WOC):
     def __init__(self):
         WOC.__init__(self)
         self.light = True   #true = green; false = red
-        self.thresh = 50
+        self.thresh = 100
         self.timeout = None
         self.previous_frame = None
         self.current_frame = None
@@ -52,7 +50,7 @@ class RedLightGreenLight(WOC):
 
     async def start_game(self):
         while True:
-            self.timeout = cozmo.util.Timeout(random.randrange(3,7))
+            self.timeout = cozmo.util.Timeout(random.randrange(1,5))
             while self.timeout.is_timed_out is False:
                 await asyncio.sleep(0)
             self.light = not self.light
@@ -88,7 +86,7 @@ class RedLightGreenLight(WOC):
             img1 = thresh[0:h, 0:w]
             img2 = thresh[0:h, w:2*w]
             if self.look_for_movement(img1, img2) is True:
-                await self.robot.say_text("back off", duration_scalar=1.2).wait_for_completed()
+                await self.robot.say_text("go back", duration_scalar=1.2).wait_for_completed()
                 time.sleep(2)
                 self.timeout = cozmo.util.Timeout(0)
             cv2.imshow('Diff', thresh)
