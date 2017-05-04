@@ -13,20 +13,23 @@ Play Red Light Green Light with two players and Cozmo as the judge.
 
 class RedLightGreenLight(WOC):    
     def __init__(self):
-        WOC.__init__(self)
         self.light = True   #true = green; false = red
         self.thresh = 100
         self.timeout = None
         self.previous_frame = None
         self.current_frame = None
+
+        #Cozmo view window - motion detection
         cv2.namedWindow('Diff')
         cv2.createTrackbar('thresh', 'Diff', 100, 255, self.update_values)
         cozmo.connect(self.run)
 
-    def update_values(self, x):             
+    def update_values(self, x):          
+        #update threshold value according to user setting for motion detection precision   
         self.thresh = cv2.getTrackbarPos('thresh', 'Diff')
 
     def look_for_movement(self, img1, img2):
+        #check every pixel value of each frame to find difference between previos frame i.e. motion
         movement = False
         count1 = 0
         count2 = 0
@@ -49,6 +52,7 @@ class RedLightGreenLight(WOC):
         return movement
 
     async def start_game(self):
+        #start RLGL with Cozmo as the judge who turns around randomly and makes his cubes go Red and Green
         while True:
             self.timeout = cozmo.util.Timeout(random.randrange(1,5))
             while self.timeout.is_timed_out is False:
@@ -72,6 +76,7 @@ class RedLightGreenLight(WOC):
                 self.event_handler = self.robot.add_event_handler(cozmo.world.EvtNewCameraImage, self.on_new_camera_image)
 
     async def on_new_camera_image(self, event, *, image:cozmo.world.CameraImage, **kw):
+        #process each frame and check for motion - ask user to start again if motion detected
         self.previous_frame = self.current_frame
         self.current_frame = np.array(image.raw_image)
         gray = cv2.cvtColor(self.current_frame, cv2.COLOR_BGR2GRAY)
@@ -95,6 +100,7 @@ class RedLightGreenLight(WOC):
                 exit()
 
     async def on_tap(self, event, *, obj, tap_count, tap_duration, **kw): 
+        #player that taps the cube on their side first wins
         if self.light is True:
             self.timeout = cozmo.util.Timeout(20)
             if obj is self.players[0]:
@@ -114,6 +120,7 @@ class RedLightGreenLight(WOC):
             exit()
 
     async def run(self, conn):
+        #start by letting Cozmo see the players' cubes and then start game
         asyncio.set_event_loop(conn._loop)
         self.robot = await conn.wait_for_robot()
         self.robot.camera.image_stream_enabled = True
